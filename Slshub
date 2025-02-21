@@ -176,55 +176,77 @@ end
 local STab = Window:CreateTab("Ball and misc", 4483362458) -- Title, Image
 
 local Button = STab:CreateButton({
-   Name = "Ball TP (Key is B)",
+   Name = "Ball tp (B)",
    Callback = function()
-   local UserInputService = game:GetService("UserInputService")
-local player = game.Players.LocalPlayer
-local junkFolder = game.Workspace:WaitForChild("Junk")
- 
--- Function to teleport Football parts to the player's torso
-local function teleportFootballParts()
-    -- Find all parts named "Football" in the Junk folder
-    for _, object in pairs(junkFolder:GetChildren()) do
-        if object:IsA("Part") and object.Name == "Football" then
-            -- Check if the player has a HumanoidRootPart or Torso and teleport the part there
-            local humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            local torso = player.Character and player.Character:FindFirstChild("Torso")
- 
-            if humanoidRootPart then
-                object.CFrame = humanoidRootPart.CFrame
-            elseif torso then
-                object.CFrame = torso.CFrame
+   local Player = game.Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+-- Function to move the parts to the player's position
+local function movePartsToPlayer()
+    local junkFolder = Workspace:FindFirstChild("Junk")
+    
+    if junkFolder and junkFolder:IsA("Folder") then
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            local playerPosition = Player.Character.HumanoidRootPart.Position
+            
+            for _, obj in pairs(junkFolder:GetDescendants()) do
+                if obj:IsA("BasePart") and (obj.Name == "kick1" or obj.Name == "kick2" or obj.Name == "kick3" or obj.Name == "Football") then
+                    print("Moving " .. obj.Name)
+                    obj.Position = playerPosition
+                    print(obj.Name .. " moved to player position")
+                end
             end
+        else
+            print("Player character or HumanoidRootPart not found")
         end
+    else
+        print("Junk folder not found in Workspace")
     end
 end
- 
--- Bind the "B" key to trigger teleportation
+
+-- Connect input event
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
- 
+
+    -- Changed from LeftControl/RightControl to "B" key
     if input.KeyCode == Enum.KeyCode.B then
-        teleportFootballParts()
+        movePartsToPlayer()
     end
 end)
- 
+
    end,
 })
 
-local Input = STab:CreateInput({
-   Name = "Ball tp to others",
-   CurrentValue = "TYPE USERNAME",
-   PlaceholderText = "Input Placeholder",
-   RemoveTextAfterFocusLost = false,
-   Flag = "Input3",
-   Callback = function(Text)
-   local UserInputService = game:GetService("UserInputService")
-local Workspace = game.Workspace  -- Ensuring correct reference to Workspace
 
+local Workspace = game.Workspace
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local currentUsername = "" -- Store the latest username dynamically
+
+-- GUI Input Field Setup (Must be First)
+local Input = STab:CreateInput({
+    Name = "Ball tp to others",
+    CurrentValue = "TYPE USERNAME",
+    PlaceholderText = "Input Placeholder",
+    RemoveTextAfterFocusLost = false,
+    Flag = "Input3",
+    Callback = function(Text)
+        if Text and Text ~= "" then
+            currentUsername = Text -- Update the stored username
+            print("Updated username to: " .. currentUsername)
+        else
+            warn("Invalid username entered!")
+        end
+    end,
+})
+
+-- Function to Get Football Parts
 local function getFootballParts()
     local junkFolder = Workspace:FindFirstChild("Junk")
     local footballParts = {}
+
     if junkFolder then
         for _, obj in ipairs(junkFolder:GetChildren()) do
             if obj:IsA("Part") and obj.Name == "Football" then
@@ -237,43 +259,50 @@ local function getFootballParts()
     return footballParts
 end
 
+-- Function to Get the Target Player's HumanoidRootPart
 local function getHumanoidRootPart()
-    local targetModel = Workspace:FindFirstChild(Text) -- Ensuring correct spelling
-    if targetModel then
-        local humanoidRootPart = targetModel:FindFirstChild("HumanoidRootPart")
+    if currentUsername == "" then
+        warn("No username set!")
+        return nil
+    end
+
+    local player = Players:FindFirstChild(currentUsername)
+    if player and player.Character then
+        local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
             return humanoidRootPart
         else
-            warn("HumanoidRootPart not found in Player model!")
+            warn("HumanoidRootPart not found in " .. currentUsername .. "'s character!")
         end
     else
-        warn("Player model not found in Workspace!")
+        warn("Player " .. currentUsername .. " not found in the game!")
     end
     return nil
 end
 
+-- Function to Move Footballs to the Target Player
 local function moveFootballs()
     local footballParts = getFootballParts()
     local humanoidRootPart = getHumanoidRootPart()
-    
+
     if humanoidRootPart then
         for _, football in ipairs(footballParts) do
             football.Position = humanoidRootPart.Position
-            print("Moved " .. football.Name .. " to Ripzz_i's HumanoidRootPart position")
+            print("Moved " .. football.Name .. " to " .. currentUsername .. "'s HumanoidRootPart position")
         end
     end
 end
 
+-- Keybind to Move Footballs (Always Uses Latest Username)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    
     if input.KeyCode == Enum.KeyCode.L then
         moveFootballs()
     end
 end)
 
-   end,
-})
+
+
 
 local Button = STab:CreateButton({
    Name = "Ball tp home: Key is M",
